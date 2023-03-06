@@ -1,20 +1,30 @@
-import { useQuery } from "react-query";
-import { getAnecdotes } from "./requests";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import { createAnecdote, getAnecdotes } from "./requests";
 
 export function App() {
-  const anecdotesResult = useQuery("anecdotes", getAnecdotes, { retry: false });
+  const queryClient = useQueryClient();
 
-  const create = (event) => {
+  const anecdotesResult = useQuery("anecdotes", getAnecdotes, { retry: false });
+  const newAnecdoteMutation = useMutation(createAnecdote, {
+    onSuccess: () => queryClient.invalidateQueries("anecdotes"),
+  });
+
+  const addAnecdote = (event) => {
     event.preventDefault();
 
     const form = event.target;
     const formData = new FormData(form);
-    const content = formData.get("anecdote");
 
-    console.log("new anecdote", content);
-
-    form.reset();
-    form.elements.anecdote.focus();
+    newAnecdoteMutation.mutate(
+      { content: formData.get("anecdote"), votes: 0 },
+      {
+        onSuccess: () => {
+          form.reset();
+          form.elements.anecdote.focus();
+        },
+        onError: () => form.elements.anecdote.focus(),
+      }
+    );
   };
 
   const vote = (anecdote) => {
@@ -40,8 +50,9 @@ export function App() {
         ></div>
       )}
       <h3>Create Anecdote</h3>
-      <form onSubmit={create}>
-        <input name="anecdote" /> <button type="submit">create</button>
+      <form onSubmit={addAnecdote}>
+        <input type="text" name="anecdote" required minLength={5} />{" "}
+        <button type="submit">create</button>
       </form>
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         {anecdotesResult.isLoading ? (
