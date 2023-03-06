@@ -1,11 +1,8 @@
+import { useQuery } from "react-query";
+import { getAnecdotes } from "./requests";
+
 export function App() {
-  const anecdotes = [
-    {
-      content: "If it hurts, do it more often",
-      id: "47145",
-      votes: 0,
-    },
-  ];
+  const anecdotesResult = useQuery("anecdotes", getAnecdotes, { retry: false });
 
   const create = (event) => {
     event.preventDefault();
@@ -23,6 +20,10 @@ export function App() {
   const vote = (anecdote) => {
     console.log("vote", anecdote);
   };
+
+  if (anecdotesResult.isError) {
+    return <div>anecdote service not available due to problems in server</div>;
+  }
 
   return (
     <div>
@@ -43,15 +44,25 @@ export function App() {
         <input name="anecdote" /> <button type="submit">create</button>
       </form>
       <div style={{ marginTop: 16, marginBottom: 16 }}>
-        {anecdotes.map((anecdote) => (
-          <div key={anecdote.id}>
-            <div>{anecdote.content}</div>
-            <div>
-              has {anecdote.votes}{" "}
-              <button onClick={() => vote(anecdote)}>vote</button>
+        {anecdotesResult.isLoading ? (
+          <p>
+            <i>Loading anecdotes...</i>
+          </p>
+        ) : anecdotesResult.data.length ? (
+          anecdotesResult.data.map((anecdote) => (
+            <div key={anecdote.id}>
+              <div>{anecdote.content}</div>
+              <div>
+                has {anecdote.votes}{" "}
+                <button onClick={() => vote(anecdote)}>vote</button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p>
+            <i>No anecdotes found...</i>
+          </p>
+        )}
       </div>
     </div>
   );
