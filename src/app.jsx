@@ -1,15 +1,9 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useNotification } from "./context/notification";
 import { createAnecdote, getAnecdotes, updateAnecdote } from "./requests";
+import { Notification } from "./components/notification";
 
 export function App() {
-  const [notification, setNotification] = useState(null);
-
-  const notify = (notification) => {
-    setNotification(notification);
-    setTimeout(() => setNotification(null), 2500);
-  };
-
   const queryClient = useQueryClient();
 
   const anecdotesResult = useQuery("anecdotes", getAnecdotes, { retry: false });
@@ -19,6 +13,8 @@ export function App() {
   const updateAnecdoteMutation = useMutation(updateAnecdote, {
     onSuccess: () => queryClient.invalidateQueries("anecdotes"),
   });
+
+  const { notification, notify } = useNotification();
 
   const addAnecdote = (event) => {
     event.preventDefault();
@@ -33,7 +29,7 @@ export function App() {
         onSuccess: () => {
           form.reset();
           form.elements.anecdote.focus();
-          notify(`Added ${content}`);
+          notify(`Added "${content}"`);
         },
         onError: () => form.elements.anecdote.focus(),
       }
@@ -43,7 +39,7 @@ export function App() {
   const vote = (anecdote) => {
     const updatedAnecdote = { ...anecdote, votes: anecdote.votes + 1 };
     updateAnecdoteMutation.mutate(updatedAnecdote, {
-      onSuccess: () => notify(`Voted for ${anecdote.content}`),
+      onSuccess: () => notify(`Voted for "${anecdote.content}"`),
     });
   };
 
@@ -54,19 +50,7 @@ export function App() {
   return (
     <div>
       <h1>Anecdotes</h1>
-      {notification && (
-        <div
-          role="alert"
-          style={{
-            border: "solid",
-            padding: 10,
-            borderWidth: 1,
-            marginBottom: 6,
-          }}
-        >
-          {notification}
-        </div>
-      )}
+      {notification && <Notification message={notification} />}
       <h3>Create Anecdote</h3>
       <form onSubmit={addAnecdote}>
         <input type="text" name="anecdote" required minLength={5} />{" "}
