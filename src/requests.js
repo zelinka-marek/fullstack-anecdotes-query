@@ -9,3 +9,9 @@ export function getAnecdotes() {
 export function createAnecdote(data) {
   return axios.post(baseUrl, data).then((response) => response.data);
 }
+
+export function updateAnecdote(data) {
+  return axios
+    .put(`${baseUrl}/${data.id}`, data)
+    .then((response) => response.data);
+}

@@ -1,11 +1,22 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
-import { createAnecdote, getAnecdotes } from "./requests";
+import { createAnecdote, getAnecdotes, updateAnecdote } from "./requests";
 
 export function App() {
+  const [notification, setNotification] = useState(null);
+
+  const notify = (notification) => {
+    setNotification(notification);
+    setTimeout(() => setNotification(null), 2500);
+  };
+
   const queryClient = useQueryClient();
 
   const anecdotesResult = useQuery("anecdotes", getAnecdotes, { retry: false });
   const newAnecdoteMutation = useMutation(createAnecdote, {
+    onSuccess: () => queryClient.invalidateQueries("anecdotes"),
+  });
+  const updateAnecdoteMutation = useMutation(updateAnecdote, {
     onSuccess: () => queryClient.invalidateQueries("anecdotes"),
   });
 
@@ -14,13 +25,15 @@ export function App() {
 
     const form = event.target;
     const formData = new FormData(form);
+    const content = formData.get("anecdote");
 
     newAnecdoteMutation.mutate(
-      { content: formData.get("anecdote"), votes: 0 },
+      { content: content, votes: 0 },
       {
         onSuccess: () => {
           form.reset();
           form.elements.anecdote.focus();
+          notify(`Added ${content}`);
         },
         onError: () => form.elements.anecdote.focus(),
       }
@@ -28,7 +41,10 @@ export function App() {
   };
 
   const vote = (anecdote) => {
-    console.log("vote", anecdote);
+    const updatedAnecdote = { ...anecdote, votes: anecdote.votes + 1 };
+    updateAnecdoteMutation.mutate(updatedAnecdote, {
+      onSuccess: () => notify(`Voted for ${anecdote.content}`),
+    });
   };
 
   if (anecdotesResult.isError) {
@@ -38,7 +54,7 @@ export function App() {
   return (
     <div>
       <h1>Anecdotes</h1>
-      {null && (
+      {notification && (
         <div
           role="alert"
           style={{
@@ -47,7 +63,9 @@ export function App() {
             borderWidth: 1,
             marginBottom: 6,
           }}
-        ></div>
+        >
+          {notification}
+        </div>
       )}
       <h3>Create Anecdote</h3>
       <form onSubmit={addAnecdote}>
