@@ -31,7 +31,10 @@ export function App() {
           form.elements.anecdote.focus();
           notify(`Added "${content}"`);
         },
-        onError: () => form.elements.anecdote.focus(),
+        onError: () => {
+          notify("too short anecdote, must have length 5 or more");
+          form.elements.anecdote.focus();
+        },
       }
     );
   };
@@ -53,7 +56,7 @@ export function App() {
       {notification && <Notification message={notification} />}
       <h3>Create Anecdote</h3>
       <form onSubmit={addAnecdote}>
-        <input type="text" name="anecdote" required minLength={5} />{" "}
+        <input type="text" name="anecdote" required />{" "}
         <button type="submit">create</button>
       </form>
       <div style={{ marginTop: 16, marginBottom: 16 }}>
